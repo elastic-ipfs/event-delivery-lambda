@@ -9,7 +9,6 @@
   "scripts": {
     "format": "prettier -w src",
     "lint": "eslint src test",
-    "build": "bash scripts/build.sh",
     "test": "c8 --reporter=text --reporter=html tap --rcfile=test/utils/config.yml",
     "deploy": "aws lambda update-function-code --cli-connect-timeout 15000 --region $AWS_REGION --function-name $LAMBDA --image $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$AWS_ECR_REPOSITORY:$DOCKER_IMAGE_VERSION",
     "test:ci": "npm run lint && c8 --reporter=text --reporter=json --check-coverage --branches 90 --functions 90 --lines 90 --statements 90 tap --rcfile=test/utils/config.yml",
@@ -23,6 +22,7 @@
     "@ipld/car": "^3.2.4",
     "@ipld/dag-cbor": "^6.0.15",
     "@ipld/dag-pb": "^2.1.17",
+    "@web-std/fetch": "^4.1.0",
     "dag-jose": "^1.0.0",
     "dotenv": "^16.0.1",
     "hdr-histogram-js": "^3.0.0",

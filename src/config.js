@@ -6,11 +6,14 @@ const { resolve } = require('path')
 require('dotenv').config({ path: process.env.ENV_FILE_PATH || resolve(process.cwd(), '.env') })
 
 const {
-  CONCURRENCY: rawConcurrency
+  CONCURRENCY: rawConcurrency,
+  EVENT_TARGET: rawEventTarget
 } = process.env
 
 const concurrency = parseInt(rawConcurrency)
+const eventTarget = new URL(rawEventTarget)
 
 module.exports = {
-  concurrency: !isNaN(concurrency) && concurrency > 0 ? concurrency : 32
+  concurrency: !isNaN(concurrency) && concurrency > 0 ? concurrency : 32,
+  eventTarget
 }

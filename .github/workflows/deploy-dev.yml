@@ -26,7 +26,7 @@ jobs:
     needs: build
     with:
       deploy_to_environment: dev
-      lambda: dev-ep-indexer
+      lambda: dev-ep-event-delivery
       docker_image_version: ${{ needs.build.outputs.build_date }}-dev
     secrets:
       aws_account_id: ${{ secrets.AWS_ACCOUNT_ID_PROD }}

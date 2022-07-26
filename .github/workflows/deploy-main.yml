@@ -34,7 +34,7 @@ jobs: # We need two separate builds as each is going to a different ECR repo
     needs: build-staging
     with:
       deploy_to_environment: staging
-      lambda: staging-ep-indexer
+      lambda: staging-ep-event-delivery
       docker_image_version: ${{ needs.build-staging.outputs.build_date }}
     secrets:
       aws_account_id: ${{ secrets.AWS_ACCOUNT_ID_PROD }}
@@ -48,7 +48,7 @@ jobs: # We need two separate builds as each is going to a different ECR repo
     needs: build-prod
     with:
       deploy_to_environment: prod
-      lambda: indexer
+      lambda: prod-ep-event-delivery
       docker_image_version: ${{ needs.build-prod.outputs.build_date }}
     secrets:
       aws_account_id: ${{ secrets.AWS_ACCOUNT_ID_PROD }}

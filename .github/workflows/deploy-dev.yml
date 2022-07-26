@@ -15,9 +15,9 @@ jobs:
     with:
       docker_image_version_suffix_label: dev
     secrets:
-      aws_account_id: ${{ secrets.AWS_ACCOUNT_ID }}
+      aws_account_id: ${{ secrets.AWS_ACCOUNT_ID_PROD }}
       aws_role_id: ${{ secrets.AWS_ROLE_ID }}
-      aws_region: ${{ secrets.AWS_REGION }}
+      aws_region: us-west-2
       aws_ecr_repository: ${{ secrets.AWS_ECR_REPOSITORY_DEV }}
   deploy:
     uses: elastic-ipfs/shared-workflows/.github/workflows/lambda-shared-deploy.yaml@main
@@ -29,7 +29,7 @@ jobs:
       lambda: dev-ep-event-delivery
       docker_image_version: ${{ needs.build.outputs.build_date }}-dev
     secrets:
-      aws_account_id: ${{ secrets.AWS_ACCOUNT_ID }}
+      aws_account_id: ${{ secrets.AWS_ACCOUNT_ID_PROD }}
       aws_role_id: ${{ secrets.AWS_ROLE_ID }}
-      aws_region: ${{ secrets.AWS_REGION }}
+      aws_region: us-west-2
       aws_ecr_repository: ${{ secrets.AWS_ECR_REPOSITORY_DEV }}

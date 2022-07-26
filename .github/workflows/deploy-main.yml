@@ -1,0 +1,57 @@
+---
+name: Build And Deploy
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+env:
+  REGISTRY: ghcr.io
+jobs: # We need two separate builds as each is going to a different ECR repo
+  build-staging:
+    permissions:
+      packages: write
+      id-token: write
+    uses: elastic-ipfs/shared-workflows/.github/workflows/lambda-shared-build.yaml@main
+    secrets:
+      aws_account_id: ${{ secrets.AWS_ACCOUNT_ID_PROD }}
+      aws_role_id: ${{ secrets.AWS_ROLE_ID }}
+      aws_region: us-west-2
+      aws_ecr_repository: ${{ secrets.AWS_ECR_REPOSITORY_STAGING }}
+  build-prod:
+    permissions:
+      packages: write
+      id-token: write
+    uses: elastic-ipfs/shared-workflows/.github/workflows/lambda-shared-build.yaml@main
+    secrets:
+      aws_account_id: ${{ secrets.AWS_ACCOUNT_ID_PROD }}
+      aws_role_id: ${{ secrets.AWS_ROLE_ID }}
+      aws_region: us-west-2
+      aws_ecr_repository: ${{ secrets.AWS_ECR_REPOSITORY }}
+  deploy-to-staging:
+    uses: elastic-ipfs/shared-workflows/.github/workflows/lambda-shared-deploy.yaml@main
+    permissions:
+      id-token: write
+    needs: build-staging
+    with:
+      deploy_to_environment: staging
+      lambda: staging-ep-indexer
+      docker_image_version: ${{ needs.build-staging.outputs.build_date }}
+    secrets:
+      aws_account_id: ${{ secrets.AWS_ACCOUNT_ID_PROD }}
+      aws_role_id: ${{ secrets.AWS_ROLE_ID }}
+      aws_region: us-west-2
+      aws_ecr_repository: ${{ secrets.AWS_ECR_REPOSITORY_STAGING }}
+  deploy-to-prod:
+    uses: elastic-ipfs/shared-workflows/.github/workflows/lambda-shared-deploy.yaml@main
+    permissions:
+      id-token: write
+    needs: build-prod
+    with:
+      deploy_to_environment: prod
+      lambda: indexer
+      docker_image_version: ${{ needs.build-prod.outputs.build_date }}
+    secrets:
+      aws_account_id: ${{ secrets.AWS_ACCOUNT_ID_PROD }}
+      aws_role_id: ${{ secrets.AWS_ROLE_ID }}
+      aws_region: us-west-2
+      aws_ecr_repository: ${{ secrets.AWS_ECR_REPOSITORY }}

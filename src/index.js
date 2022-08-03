@@ -11,11 +11,12 @@ const fetch = require('@web-std/fetch')
  * @param {Event} event
  */
 async function main(event) {
+  logger.debug('handling event')
+  const { eventTarget } = await config.envToEventTargetConfig(process.env)
   const handle = createEventDeliveryLambda(
-    new URL(config.eventTarget),
+    eventTarget,
     createWebhookDeliver(fetch)
   )
-  logger.debug('handling event')
   const result = await handle(event)
   return result
 }

@@ -13,7 +13,9 @@ const defaultEnv = process.env
 class EnvToConfig {
   static eventTarget(env) {
     const envVar = env.EVENT_TARGET
-    if (envVar) { return new URL(envVar) }
+    if (envVar) {
+      return new URL(envVar)
+    }
   }
 
   static eventTargetCredentialsSecretName(env) {
@@ -34,10 +36,13 @@ const envToEventTargetConfig = async (
   eventTargetCredentialsSecretName = EnvToConfig.eventTargetCredentialsSecretName(env),
   parameters = defaultParameters
 ) => {
+  console.debug('envToEventTargetConfig called with', { eventTargetCredentialsSecretName })
   // if eventTargetCredentialsSecretName is set, it takes priority to determine final eventTarget string
   if (eventTargetCredentialsSecretName) {
     const eventTargetString = await parameters.readSecret({ name: eventTargetCredentialsSecretName })
+    console.debug(`did readSecret of eventTargetCredentialsSecretName=${eventTargetCredentialsSecretName}. typeof=${typeof eventTargetString}`)
     if (eventTargetString) {
+      console.debug('setting eventTarget to URL from dereferenced eventTargetCredentialsSecretName')
       eventTarget = new URL(eventTargetString)
     }
   }
@@ -47,9 +52,7 @@ const envToEventTargetConfig = async (
   }
 }
 
-const {
-  CONCURRENCY: rawConcurrency
-} = process.env
+const { CONCURRENCY: rawConcurrency } = process.env
 
 const concurrency = parseInt(rawConcurrency)
 

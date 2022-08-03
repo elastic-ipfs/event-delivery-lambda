@@ -21,9 +21,9 @@ function createWebhookDeliver(fetch) {
     })
     logger.debug(`delivering event via webhook type=${event.type}`)
     const response = await fetch(request)
-    logger.debug(`webhook delivery response status=${response.status}`)
+    logger.info(`webhook delivery response status=${response.status}`)
     // expect 2xx response status
-    assert.ok(response.status >= 200 && response.status < 300)
+    assert.ok(response.status >= 200 && response.status < 300, `expected 2xx response status code, but got ${response.status}`)
   }
 }
 

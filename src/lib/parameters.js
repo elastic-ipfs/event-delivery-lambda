@@ -5,38 +5,42 @@
 const { SSMClient, GetParameterCommand } = require('@aws-sdk/client-ssm')
 const { logger: defaultLogger } = require('./logging')
 
-const defaultSend = async (command, logger = defaultLogger) => {
-  const ssnClient = new SSMClient()
-  let parameter
-  try {
-    parameter = await ssnClient.send(command)
-  } catch (error) {
-    logger.debug('(not unusual for missing parameters) error getting parameter using ssnClient', error)
-  }
-  if (parameter) {
-    return parameter
-  }
-}
-
 /**
- * read a secret
+ * create an object that reads parameters via aws SSNClient
+ * @param {*} param0
+ * @returns
  */
-async function readSecret({ name, send = defaultSend, logger = defaultLogger }) {
-  logger.debug('readSecret', { name })
-  try {
-    const getParameterResponse = await send(new GetParameterCommand({
-      Name: name,
-      WithDecryption: true
-    }))
-    return getParameterResponse?.Parameter?.Value
-  } catch (error) {
-    if (error.name === 'ParameterNotFound') {
-      return undefined
+function createParameters({
+  region = 'us-west-2',
+  ssmClient = new SSMClient({ region })
+} = {}) {
+  /** read a secret parameter */
+  async function readSecret({
+    name,
+    logger = defaultLogger
+  }) {
+    logger.debug('readSecret', { name })
+    try {
+      const getParameterResponse = await ssmClient.send(
+        new GetParameterCommand({
+          Name: name,
+          WithDecryption: true
+        })
+      )
+      return getParameterResponse?.Parameter?.Value
+    } catch (error) {
+      if (error.name === 'ParameterNotFound') {
+        logger.info(`ParameterNotFound name=${name}`)
+        return undefined
+      }
+      throw error
     }
-    throw error
+  }
+  return {
+    readSecret
   }
 }
 
 module.exports = {
-  readSecret
+  createParameters
 }

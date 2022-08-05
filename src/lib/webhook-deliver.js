@@ -1,13 +1,13 @@
 const { Request } = require('@web-std/fetch')
 const assert = require('assert')
 const { basicAuthHeaderValue } = require('./basic-auth')
-const { logger } = require('./logging')
+const { logger: defaultLogger } = require('./logging')
 
 /**
  * @param {(request: Request) => Promise<Response>} fetch
  * @returns {(target: URL, event: unknown) => Promise<void>}
  */
-function createWebhookDeliver(fetch) {
+function createWebhookDeliver(fetch, logger=defaultLogger) {
   return async (target, event) => {
     // target URL may have user:pass in it. If so, reuse as http basic auth Authorization header value in webhook
     const authorization = (target.username || target.password) ? basicAuthHeaderValue(target.username, target.password) : undefined

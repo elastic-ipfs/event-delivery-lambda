@@ -10,7 +10,6 @@ const { createWebhookDeliver } = require('../src/lib/webhook-deliver')
 const { basicAuthentication } = require('../src/lib/basic-auth')
 const { Console } = require('console')
 const { Writable } = require('stream')
-const parameters = require('../src/lib/parameters.js')
 
 const createSilentConsole = () => new Console(new Writable())
 
@@ -20,17 +19,6 @@ async function createExampleEvent(eventType) {
   const event = JSON.parse(eventString)
   return event
 }
-
-t.test('can use parameters.readSecret', async t => {
-  const nonExistentSecretName = 'foosecretben'
-  const secretGetFailure = await parameters.readSecret({ name: nonExistentSecretName })
-  t.ok(!secretGetFailure, 'expect to have read undefined, because secret is not defined, but got ' + secretGetFailure)
-  // if this is set, also check that it can be read
-  if (process.env.EVENT_TARGET_CREDENTIALS_SECRET_NAME) {
-    const credsSecretValue = await parameters.readSecret({ name: process.env.EVENT_TARGET_CREDENTIALS_SECRET_NAME })
-    t.ok(credsSecretValue, 'can readSecret with name=env.EVENT_TARGET_CREDENTIALS_SECRET_NAME')
-  }
-})
 
 t.test('event-delivery-lambda handles sqsEvent and calls deliver', async t => {
   const eventType = 'IndexerCompleted'

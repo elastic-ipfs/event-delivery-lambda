@@ -2,7 +2,7 @@
  * @fileoverview facade for system parameter store. useful for secrets i/o
  */
 
-const { SSMClient, GetParameterCommand } = require('@aws-sdk/client-ssm')
+const { SSMClient, GetParametersCommand } = require('@aws-sdk/client-ssm')
 const { logger: defaultLogger } = require('./logging')
 
 /**
@@ -19,15 +19,18 @@ function createParameters({
     name,
     logger = defaultLogger
   }) {
-    logger.debug('readSecret', { name })
+    if (typeof name !== 'string') {
+      throw new Error(`unexpected non-string type for name: ${typeof name}`)
+    }
+    console.debug('readSecret', { name })
     try {
-      const getParameterResponse = await ssmClient.send(
-        new GetParameterCommand({
-          Name: name,
+      const getParametersResponse = await ssmClient.send(
+        new GetParametersCommand({
+          Names: [name],
           WithDecryption: true
         })
       )
-      return getParameterResponse?.Parameter?.Value
+      return getParametersResponse?.Parameters?.[0]?.Value
     } catch (error) {
       if (error.name === 'ParameterNotFound') {
         logger.info(`ParameterNotFound name=${name}`)

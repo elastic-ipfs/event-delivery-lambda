@@ -2,7 +2,7 @@
 
 const t = require('tap')
 const { createEventDeliveryLambda } = require('../src/lib/event-delivery-lambda')
-const { createSqsRecord, createSqsEvent } = require('../src/lib/sqs')
+const { createSqsRecordFromSnsIpfsEvent, createSqsEvent } = require('../src/lib/sqs')
 const fs = require('fs/promises')
 const path = require('path')
 const { Response } = require('@web-std/fetch')
@@ -28,7 +28,7 @@ t.test('event-delivery-lambda handles sqsEvent and calls deliver', async t => {
     deliveries.push({ event, target })
   }
   const handle = createEventDeliveryLambda(fakeEventTarget, deliver, createSilentConsole())
-  const event = createSqsEvent(createSqsRecord(await createExampleEvent(eventType)))
+  const event = createSqsEvent(createSqsRecordFromSnsIpfsEvent(await createExampleEvent(eventType)))
   await handle(event)
   t.equal(deliveries.length, 1)
   t.equal(deliveries[0].event.type, eventType)
@@ -48,24 +48,53 @@ t.test('event-delivery-lambda handles multi-Record sqsEvent and returns batchIte
   const desiredSuccessful = 1
   const desiredUnsuccessful = 3
   let successfulDeliveriesRemaining = desiredSuccessful
+  const eventsDelivered = []
   const deliver = async (target, event) => {
     if (successfulDeliveriesRemaining <= 0) {
       throw new Error('cannot deliver')
     }
+    eventsDelivered.push(event)
     successfulDeliveriesRemaining--
   }
   // so expected errors dont make test output ugly
   const silentConsole = new Console(new Writable())
   const handle = createEventDeliveryLambda(fakeEventTarget, deliver, silentConsole)
   const sampleEvent = await createExampleEvent(eventType)
-  const records = (new Array(desiredSuccessful + desiredUnsuccessful).fill(0)).map(i => createSqsRecord(sampleEvent))
+  const records = (new Array(desiredSuccessful + desiredUnsuccessful).fill(0)).map(i => createSqsRecordFromSnsIpfsEvent(sampleEvent))
   const expectedFailureMessageIds = records.slice(desiredSuccessful).map(e => e.messageId)
   const event = createSqsEvent(...records)
   const result = await handle(event)
+  t.equal(eventsDelivered.length, desiredSuccessful)
+  t.equal(eventsDelivered[0].type, eventType)
   t.equal(result.batchItemFailures.length, desiredUnsuccessful)
   const actualFailureMessageIds = new Set(result.batchItemFailures.map(f => f.itemIdentifier))
   for (const mid of expectedFailureMessageIds) {
     t.equal(actualFailureMessageIds.has(mid), true)
+  }
+})
+
+function createFakeDeliver() {
+  const deliveries = []
+  const deliver = (target, event) => {
+    deliveries.push(event)
+  }
+  return { deliver, deliveries }
+}
+
+t.test('can process example sqs-events', async t => {
+  const fakeEventTarget = new URL('http://userA:passwordA@example.com')
+  const eventsDir = path.join(__dirname, 'sqs-events')
+  const exampleEvents = (await fs.readdir(eventsDir)).map(file => path.join(eventsDir, file))
+  for (const eventFile of exampleEvents) {
+    const { deliveries, deliver } = createFakeDeliver()
+    const eventString = await fs.readFile(eventFile, 'utf-8')
+    const event = JSON.parse(eventString)
+    const handle = createEventDeliveryLambda(fakeEventTarget, deliver)
+    await handle(event)
+    for (const delivery of deliveries) {
+      t.ok(delivery.type, 'expect delivered event to have a type')
+    }
+    t.ok(deliveries.length >= 1)
   }
 })
 
@@ -91,6 +120,22 @@ t.test('FetchDeliverer delivers events as HTTP POST', async t => {
     const requestBody = await readToString(request.body)
     const parsedBody = JSON.parse(requestBody)
     t.equal(parsedBody.type, exampleIpfsEvent.type, 'expect webhook request body to be the delivered ipfsEvent')
+  }
+  // if fetch results in a non-2xx status, it should throw
+  const erroringFetch = async (request) => {
+    return new Response('fakeresponse', { status: 400 })
+  }
+  const erroringDeliver = createWebhookDeliver(erroringFetch)
+  try {
+    await erroringDeliver(eventTarget, exampleIpfsEvent)
+    t.fail('erroringDeliver should have failed')
+  } catch (error) {
+    if (error.name !== 'AssertionError') {
+      // unexpected error
+      throw error
+    } else {
+      // we expect this error
+    }
   }
 })
 

@@ -24,7 +24,7 @@ function createWebhookDeliver(fetch) {
     const response = await fetch(request)
     logger.info(`webhook delivery response status=${response.status}`)
     const is2xxResponseCode = ({ status }) => status >= 200 && status < 300
-    if (!is2xxResponseCode) {
+    if (!is2xxResponseCode(response)) {
       const responseText = response.text().catch(error => `Error reading response text: ${error}`)
       logger.info(`webhook-deliver could not deliver event. requestBody=${requestBody} responseText=${await responseText}`)
     }
